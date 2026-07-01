@@ -1,6 +1,10 @@
+using Api.Infrastructure;
+using Api.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Api.Infrastructure;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Api.Features.Usuarios;
 

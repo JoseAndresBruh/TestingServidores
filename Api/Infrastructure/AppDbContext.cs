@@ -1,11 +1,17 @@
-using Api.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Api.Domain.Entities;
 
 namespace Api.Infrastructure;
 
-public class AppDbContext : DbContext
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<Usuario> Usuarios { get; set; }
 
-    public DbSet<Usuario> Usuarios => Set<Usuario>();
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Filtro global para ignorar automáticamente registros eliminados de forma lógica
+        modelBuilder.Entity<Usuario>().HasQueryFilter(u => !u.IsDeleted);
+    }
 }

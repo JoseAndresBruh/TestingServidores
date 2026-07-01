@@ -1,4 +1,5 @@
 using Api.Infrastructure;
+using Api.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
