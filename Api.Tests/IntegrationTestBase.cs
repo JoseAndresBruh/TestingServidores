@@ -11,7 +11,6 @@ namespace Api.Tests;
 
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
-    private static bool _dbInitialized = false;
     private WebApplicationFactory<Program> _factory = default!;
     protected HttpClient Client = default!;
     protected AppDbContext DbContext = default!;
@@ -39,11 +38,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         using var scope = _factory.Services.CreateScope();
         DbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         
-        if (!_dbInitialized)
-        {
-            await DbContext.Database.EnsureCreatedAsync();
-            _dbInitialized = true;
-        }
+        // CORRECCIÓN: Ejecutamos EnsureCreatedAsync incondicionalmente. 
+        // EF Core es inteligente y solo crea las tablas si no existen en ESTE contenedor específico.
+        await DbContext.Database.EnsureCreatedAsync();
 
         var dbConnection = DbContext.Database.GetDbConnection();
         await dbConnection.OpenAsync();

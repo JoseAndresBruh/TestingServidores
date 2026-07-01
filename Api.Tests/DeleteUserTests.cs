@@ -13,8 +13,10 @@ public class DeleteUserTests : IntegrationTestBase
         // 1. Arrange: Crear usuario
         var crearComando = new CrearUsuarioComando("Borrame", "borrar@test.com");
         var crearResponse = await Client.PostAsJsonAsync("/usuarios", crearComando);
-        var resultadoCreacion = await crearResponse.Content.ReadFromJsonAsync<dynamic>();
-        Guid userId = Guid.Parse(resultadoCreacion!.GetProperty("id").GetString()!);
+        
+        // CORRECCIÓN: Leer la respuesta directamente como string y quitarle las comillas
+        var userIdString = await crearResponse.Content.ReadAsStringAsync();
+        Guid userId = Guid.Parse(userIdString.Trim('"'));
 
         // 2. Act: Borrar usuario
         var deleteResponse = await Client.DeleteAsync($"/usuarios/{userId}");
