@@ -30,6 +30,7 @@ app.MapPost("/usuarios", async (CrearUsuarioComando comando, ISender sender) =>
 
 app.MapListarUsuarios();
 app.MapGetUserById();
+app.MapUpdateUser();
 
 app.MapGet("/", () => "API funcionando!");
 
