@@ -1,8 +1,7 @@
 using Api.Infrastructure;
-using Microsoft.AspNetCore.Hosting; // <-- AQUÍ ESTÁ LA SOLUCIÓN
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Respawn;
 using Respawn.Graph;
@@ -18,26 +17,18 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        // Forzamos el entorno "Testing" para que Program.cs lo detecte inmediatamente
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-{
-    builder.ConfigureAppConfiguration((context, config) =>
-    {
-        config.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            // Esta clave debe coincidir con lo que builder.Configuration.GetConnectionString("sqldata") espera
-            ["ConnectionStrings:sqldata"] = "Server=(localdb)\\mssqllocaldb;Database=ApiTestingDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
-            });
+            builder.UseEnvironment("Testing");
         });
-    });
 
         Client = _factory.CreateClient();
         using var scope = _factory.Services.CreateScope();
         DbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         
-        // 2. IMPORTANTE: Aseguramos que la base de datos de prueba se cree antes de limpiarla
         await DbContext.Database.EnsureCreatedAsync();
 
-        // 3. Inicializamos Respawn
         _respawner = await Respawner.CreateAsync(DbContext.Database.GetDbConnection(), new RespawnerOptions
         {
             TablesToIgnore = ["__EFMigrationsHistory"]

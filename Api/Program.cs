@@ -7,19 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Intenta obtener la conexión desde la configuración
-var connectionString = builder.Configuration.GetConnectionString("sqldata");
-
-if (string.IsNullOrEmpty(connectionString))
+// Detección 100% segura: Si estamos en testing, Aspire NO se ejecuta
+if (builder.Environment.EnvironmentName == "Testing")
 {
-    // Si no encuentra la conexión de Aspire, intenta buscarla en la sección estándar
-    builder.AddSqlServerDbContext<AppDbContext>("sqldata");
+    builder.Services.AddDbContextPool<AppDbContext>(options =>
+        options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ApiTestingDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"));
 }
 else
 {
-    // Forzamos la conexión manualmente si estamos en testing
-    builder.Services.AddDbContextPool<AppDbContext>(options =>
-        options.UseSqlServer(connectionString));
+    // Solo se ejecuta en desarrollo/producción con el orquestador
+    builder.AddSqlServerDbContext<AppDbContext>("sqldata");
 }
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
