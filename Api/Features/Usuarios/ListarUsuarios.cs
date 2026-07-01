@@ -1,23 +1,19 @@
 using Api.Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Api.Features.Usuarios;
 
-// DTO de respuesta paginada
-public record PagedList<T>(List<T> Items, int Page, int PageSize, int TotalCount);
-public record UserDto(Guid Id, string Nombre, string Email);
+public record ListarUsuariosQuery(int Page, int PageSize) : IRequest<PagedList<UserDto>>;
 
-// Consulta
-public record ListarUsuariosQuery(int Page = 1, int PageSize = 10) : IRequest<PagedList<UserDto>>;
-
-// Handler
 public class ListarUsuariosHandler(AppDbContext dbContext) : IRequestHandler<ListarUsuariosQuery, PagedList<UserDto>>
 {
     public async Task<PagedList<UserDto>> Handle(ListarUsuariosQuery query, CancellationToken cancellationToken)
     {
         var totalCount = await dbContext.Usuarios.CountAsync(cancellationToken);
-        
         var items = await dbContext.Usuarios
             .OrderBy(u => u.Nombre)
             .Skip((query.Page - 1) * query.PageSize)
@@ -29,7 +25,6 @@ public class ListarUsuariosHandler(AppDbContext dbContext) : IRequestHandler<Lis
     }
 }
 
-// Endpoint
 public static class ListarUsuariosEndpoint
 {
     public static void MapListarUsuarios(this IEndpointRouteBuilder app) =>

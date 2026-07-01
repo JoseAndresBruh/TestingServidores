@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Detección 100% segura: Si estamos en testing, Aspire NO se ejecuta
 if (builder.Environment.EnvironmentName == "Testing")
 {
     builder.Services.AddDbContextPool<AppDbContext>(options =>
@@ -15,7 +14,6 @@ if (builder.Environment.EnvironmentName == "Testing")
 }
 else
 {
-    // Solo se ejecuta en desarrollo/producción con el orquestador
     builder.AddSqlServerDbContext<AppDbContext>("sqldata");
 }
 
@@ -24,12 +22,15 @@ builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
-app.MapPost("/usuarios", async (CrearUsuarioComando comando, ISender sender) =>
-{
-    var id = await sender.Send(comando);
-    return Results.Ok(new { Id = id });
-});
+// Registro explícito de endpoints
+app.MapPost("/usuarios", async (CrearUsuarioComando comando, ISender sender) => 
+    Results.Ok(await sender.Send(comando)));
 
-app.MapGetUserById();
+app.MapGet("/usuarios", async (int? page, int? pageSize, ISender sender) => 
+    Results.Ok(await sender.Send(new ListarUsuariosQuery(page ?? 1, pageSize ?? 10))));
+
+app.MapGetUserById(); // Asegúrate de que esto mapea a /usuarios/{id}
+
 app.MapGet("/", () => "API funcionando!");
+
 app.Run();

@@ -11,6 +11,7 @@ namespace Api.Tests;
 
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
+    private static bool _dbInitialized = false;
     private WebApplicationFactory<Program> _factory = default!;
     protected HttpClient Client = default!;
     protected AppDbContext DbContext = default!;
@@ -26,31 +27,31 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-            
             builder.ConfigureServices(services =>
             {
                 var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
                 if (descriptor != null) services.Remove(descriptor);
-                
                 services.AddDbContextPool<AppDbContext>(options => options.UseSqlServer(connectionString));
             });
         });
 
         Client = _factory.CreateClient();
-        
         using var scope = _factory.Services.CreateScope();
         DbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         
-        // Aseguramos la base de datos
-        await DbContext.Database.EnsureCreatedAsync();
+        if (!_dbInitialized)
+        {
+            await DbContext.Database.EnsureCreatedAsync();
+            _dbInitialized = true;
+        }
 
-        // AQUÍ ESTÁ LA CORRECCIÓN: Abrir la conexión antes de pasarla a Respawn
         var dbConnection = DbContext.Database.GetDbConnection();
         await dbConnection.OpenAsync();
 
         _respawner = await Respawner.CreateAsync(dbConnection, new RespawnerOptions
         {
-            TablesToIgnore = ["__EFMigrationsHistory"]
+            TablesToIgnore = ["__EFMigrationsHistory"],
+            DbAdapter = DbAdapter.SqlServer
         });
     }
 

@@ -1,28 +1,22 @@
-using Api.Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Api.Infrastructure;
 
 namespace Api.Features.Usuarios;
 
-// DTO
-public record UserResponse(Guid Id, string Nombre, string Email);
+public record GetUserByIdQuery(Guid Id) : IRequest<UserDto?>;
 
-// Query
-public record GetUserByIdQuery(Guid Id) : IRequest<UserResponse?>;
-
-// Handler
-public class GetUserByIdHandler(AppDbContext dbContext) : IRequestHandler<GetUserByIdQuery, UserResponse?>
+public class GetUserByIdHandler(AppDbContext dbContext) : IRequestHandler<GetUserByIdQuery, UserDto?>
 {
-    public async Task<UserResponse?> Handle(GetUserByIdQuery query, CancellationToken cancellationToken)
+    public async Task<UserDto?> Handle(GetUserByIdQuery query, CancellationToken cancellationToken)
     {
         return await dbContext.Usuarios
             .Where(u => u.Id == query.Id)
-            .Select(u => new UserResponse(u.Id, u.Nombre, u.Email))
+            .Select(u => new UserDto(u.Id, u.Nombre, u.Email))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }
 
-// Extensión para el endpoint
 public static class GetUserByIdEndpoint
 {
     public static void MapGetUserById(this IEndpointRouteBuilder app) =>
