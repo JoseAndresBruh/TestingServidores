@@ -18,18 +18,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // 1. Configuramos la fábrica para inyectar una cadena de conexión local para las pruebas
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+{
+    builder.ConfigureAppConfiguration((context, config) =>
+    {
+        config.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    // Usamos LocalDB (incluido en Windows/Visual Studio) para pruebas rápidas
-                    ["ConnectionStrings:sqldata"] = "Server=(localdb)\\mssqllocaldb;Database=ApiTestingDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
-                });
+            // Esta clave debe coincidir con lo que builder.Configuration.GetConnectionString("sqldata") espera
+            ["ConnectionStrings:sqldata"] = "Server=(localdb)\\mssqllocaldb;Database=ApiTestingDb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
             });
         });
+    });
 
         Client = _factory.CreateClient();
         using var scope = _factory.Services.CreateScope();
