@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configuración de base de datos condicional para pruebas
 if (builder.Environment.EnvironmentName == "Testing")
 {
     builder.Services.AddDbContextPool<AppDbContext>(options =>
@@ -17,19 +18,18 @@ else
     builder.AddSqlServerDbContext<AppDbContext>("sqldata");
 }
 
+// Registro de servicios de la aplicación
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
 var app = builder.Build();
 
-// Registro explícito de endpoints
+// Endpoints mínimos de la aplicación
 app.MapPost("/usuarios", async (CrearUsuarioComando comando, ISender sender) => 
     Results.Ok(await sender.Send(comando)));
 
-app.MapGet("/usuarios", async (int? page, int? pageSize, ISender sender) => 
-    Results.Ok(await sender.Send(new ListarUsuariosQuery(page ?? 1, pageSize ?? 10))));
-
-app.MapGetUserById(); // Asegúrate de que esto mapea a /usuarios/{id}
+app.MapListarUsuarios();
+app.MapGetUserById();
 
 app.MapGet("/", () => "API funcionando!");
 
